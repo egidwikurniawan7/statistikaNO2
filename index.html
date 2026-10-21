@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Analisis PD</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+  <header class="header">
+    <div class="wrap">
+      <h1>Dashboard Analisis Percaya Diri (PD)</h1>
+      <p>Statistik deskriptif, regresi linear sederhana dan regresi linear berganda dari data survei.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- 1. DATA -->
+    <section class="card">
+      <h2><span class="badge">1</span> Data Survei</h2>
+      <p class="desc">Data bawaan: <b>data_uji</b> (hasil survei). Bisa juga unggah CSV lain (pemisah koma atau titik koma).</p>
+      <div class="row">
+        <input type="file" id="fileCsv" accept=".csv">
+        <label for="pilihY"><b>Variabel Y:</b></label>
+        <select id="pilihY"></select>
+        <span id="infoData" class="muted"></span>
+      </div>
+      <div class="legend-vars" id="keteranganVariabel"></div>
+      <details>
+        <summary>Lihat tabel data</summary>
+        <div class="table-scroll tinggi"><table id="tabelData"></table></div>
+      </details>
+    </section>
+
+    <!-- 2a. DESKRIPTIF -->
+    <section class="card">
+      <h2><span class="badge">2a</span> Statistik Deskriptif &amp; Insight</h2>
+      <div class="table-scroll"><table id="tabelDeskriptif"></table></div>
+      <h3>Sebaran tiap variabel</h3>
+      <div id="gridHistogram" class="grid-chart"></div>
+      <h3>Insight dari data</h3>
+      <ul id="insightDeskriptif" class="insight"></ul>
+    </section>
+
+    <!-- 2b. REGRESI SEDERHANA -->
+    <section class="card">
+      <h2><span class="badge">2b</span> Regresi Linear Sederhana &nbsp;<small>y = a + bx</small></h2>
+      <p class="desc">Setiap variabel X dibandingkan satu per satu dengan Y.</p>
+      <div class="table-scroll"><table id="tabelBandingSederhana"></table></div>
+
+      <h3>Pilih variabel X</h3>
+      <div id="tabX" class="tabs"></div>
+      <div class="grid-2">
+        <div id="plotSederhana" class="chart"></div>
+        <div>
+          <div id="hasilSederhana"></div>
+        </div>
+      </div>
+
+      <h3>Prediksi</h3>
+      <div class="predict-box">
+        <label for="inputPrediksiS" id="labelPrediksiS"></label>
+        <input type="number" id="inputPrediksiS" step="any">
+        <div id="hasilPrediksiS" class="predict-result"></div>
+      </div>
+
+      <details>
+        <summary>Langkah hitung manual</summary>
+        <div id="manualSederhana" class="manual"></div>
+      </details>
+    </section>
+
+    <!-- 2c. REGRESI BERGANDA -->
+    <section class="card">
+      <h2><span class="badge">2c</span> Regresi Linear Berganda</h2>
+      <p class="desc" id="rumusBerganda"></p>
+      <div class="kpi-row" id="kpiBerganda"></div>
+      <div class="table-scroll"><table id="tabelBerganda"></table></div>
+      <div class="grid-2">
+        <div id="plotAktualPrediksi" class="chart"></div>
+        <div id="plotR2" class="chart"></div>
+      </div>
+      <h3>Insight regresi</h3>
+      <ul id="insightRegresi" class="insight"></ul>
+
+      <h3>Simulasi prediksi</h3>
+      <div id="sliderBerganda" class="slider-grid"></div>
+      <div id="hasilPrediksiB" class="predict-result besar"></div>
+
+      <h3>Korelasi antar variabel</h3>
+      <div id="plotHeatmap" class="chart"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="badge">!</span> Catatan</h2>
+      <ul class="insight">
+        <li>Korelasi dan regresi menunjukkan <b>hubungan</b>, bukan bukti sebab-akibat.</li>
+        <li>Data kecil (n = 30) dan berasal dari survei mandiri, jadi hasil perlu dibaca hati-hati.</li>
+        <li>Batas signifikansi yang dipakai: &alpha; = 0,05.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="wrap muted footer">Dibuat dengan HTML, CSS dan JavaScript murni. Perhitungan ada di <code>stats.js</code>, tampilan ada di <code>app.js</code>.</footer>
+
+  <script src="data.js"></script>
+  <script src="stats.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
