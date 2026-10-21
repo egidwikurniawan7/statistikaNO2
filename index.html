@@ -3,25 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Analisis PD</title>
+  <title>Analisis PD</title>
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 </head>
 <body>
-  <header class="header">
-    <div class="wrap">
-      <h1>Dashboard Analisis Percaya Diri (PD)</h1>
-      <p>Statistik deskriptif, regresi linear sederhana dan regresi linear berganda dari data survei.</p>
-    </div>
-  </header>
+<div class="app">
 
-  <main class="wrap">
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="sidebar">
+    <div class="logo"><span>PD</span>analisis</div>
+    <nav id="menu">
+      <a href="#ringkasan" class="aktif"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg><b>Ringkasan</b></a>
+      <a href="#data"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg><b>Data</b></a>
+      <a href="#deskriptif"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg><b>Deskriptif (2a)</b></a>
+      <a href="#sederhana"><svg viewBox="0 0 24 24"><path d="M3 20L21 6"/><circle cx="6" cy="14" r="1.5"/><circle cx="12" cy="13" r="1.5"/><circle cx="17" cy="7" r="1.5"/></svg><b>Regresi sederhana (2b)</b></a>
+      <a href="#berganda"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg><b>Regresi berganda (2c)</b></a>
+      <a href="#catatan"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg><b>Catatan</b></a>
+    </nav>
+    <div class="sidebar-foot muted">Data survei: <b>data_uji</b></div>
+  </aside>
+
+  <!-- ========== KONTEN ========== -->
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1>Analisis Percaya Diri (PD)</h1>
+        <p class="muted">Ringkasan statistik dan regresi dari data survei.</p>
+      </div>
+      <button id="tombolTema" class="icon-btn" title="Ganti tema terang / gelap" aria-label="Ganti tema">
+        <svg id="ikonTema" viewBox="0 0 24 24"></svg>
+      </button>
+    </header>
+
+    <!-- RINGKASAN -->
+    <section id="ringkasan" class="grid-3">
+      <div class="card">
+        <h3 class="judul-kartu">Variasi PD yang dijelaskan</h3>
+        <p class="muted kecil">Regresi berganda, semua variabel X</p>
+        <div id="ringUtama" class="ring-tengah"></div>
+        <div id="infoRingUtama" class="center muted kecil"></div>
+      </div>
+      <div class="card">
+        <h3 class="judul-kartu">Korelasi dengan PD</h3>
+        <p class="muted kecil">Makin panjang batang, makin kuat hubungan</p>
+        <div id="barKorelasi"></div>
+      </div>
+      <div class="card">
+        <h3 class="judul-kartu">R² tiap variabel</h3>
+        <p class="muted kecil">Regresi sederhana, satu X vs PD</p>
+        <div id="ubinR2" class="ubin"></div>
+      </div>
+    </section>
 
     <!-- 1. DATA -->
-    <section class="card">
+    <section id="data" class="card">
       <h2><span class="badge">1</span> Data Survei</h2>
-      <p class="desc">Data bawaan: <b>data_uji</b> (hasil survei). Bisa juga unggah CSV lain (pemisah koma atau titik koma).</p>
+      <p class="muted">Data bawaan: <b>data_uji</b>. Bisa juga unggah CSV lain (pemisah koma atau titik koma).</p>
       <div class="row">
         <input type="file" id="fileCsv" accept=".csv">
         <label for="pilihY"><b>Variabel Y:</b></label>
@@ -35,8 +74,8 @@
       </details>
     </section>
 
-    <!-- 2a. DESKRIPTIF -->
-    <section class="card">
+    <!-- 2a -->
+    <section id="deskriptif" class="card">
       <h2><span class="badge">2a</span> Statistik Deskriptif &amp; Insight</h2>
       <div class="table-scroll"><table id="tabelDeskriptif"></table></div>
       <h3>Sebaran tiap variabel</h3>
@@ -45,19 +84,17 @@
       <ul id="insightDeskriptif" class="insight"></ul>
     </section>
 
-    <!-- 2b. REGRESI SEDERHANA -->
-    <section class="card">
-      <h2><span class="badge">2b</span> Regresi Linear Sederhana &nbsp;<small>y = a + bx</small></h2>
-      <p class="desc">Setiap variabel X dibandingkan satu per satu dengan Y.</p>
+    <!-- 2b -->
+    <section id="sederhana" class="card">
+      <h2><span class="badge">2b</span> Regresi Linear Sederhana <small>y = a + bx</small></h2>
+      <p class="muted">Setiap variabel X dibandingkan satu per satu dengan Y.</p>
       <div class="table-scroll"><table id="tabelBandingSederhana"></table></div>
 
       <h3>Pilih variabel X</h3>
       <div id="tabX" class="tabs"></div>
       <div class="grid-2">
         <div id="plotSederhana" class="chart"></div>
-        <div>
-          <div id="hasilSederhana"></div>
-        </div>
+        <div id="hasilSederhana"></div>
       </div>
 
       <h3>Prediksi</h3>
@@ -73,13 +110,13 @@
       </details>
     </section>
 
-    <!-- 2c. REGRESI BERGANDA -->
-    <section class="card">
+    <!-- 2c -->
+    <section id="berganda" class="card">
       <h2><span class="badge">2c</span> Regresi Linear Berganda</h2>
-      <p class="desc" id="rumusBerganda"></p>
+      <p class="muted" id="rumusBerganda"></p>
       <div class="kpi-row" id="kpiBerganda"></div>
       <div class="table-scroll"><table id="tabelBerganda"></table></div>
-      <div class="grid-2">
+      <div class="grid-2 sama">
         <div id="plotAktualPrediksi" class="chart"></div>
         <div id="plotR2" class="chart"></div>
       </div>
@@ -94,7 +131,7 @@
       <div id="plotHeatmap" class="chart"></div>
     </section>
 
-    <section class="card">
+    <section id="catatan" class="card">
       <h2><span class="badge">!</span> Catatan</h2>
       <ul class="insight">
         <li>Korelasi dan regresi menunjukkan <b>hubungan</b>, bukan bukti sebab-akibat.</li>
@@ -102,9 +139,10 @@
         <li>Batas signifikansi yang dipakai: &alpha; = 0,05.</li>
       </ul>
     </section>
-  </main>
 
-  <footer class="wrap muted footer">Dibuat dengan HTML, CSS dan JavaScript murni. Perhitungan ada di <code>stats.js</code>, tampilan ada di <code>app.js</code>.</footer>
+    <footer class="muted footer">HTML, CSS dan JavaScript murni. Rumus ada di <code>stats.js</code>, tampilan ada di <code>app.js</code>.</footer>
+  </div>
+</div>
 
   <script src="data.js"></script>
   <script src="stats.js"></script>

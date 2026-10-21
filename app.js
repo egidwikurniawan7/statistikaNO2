@@ -37,6 +37,94 @@ function kekuatan(r) {
 }
 const arah = (r) => (r >= 0 ? 'positif' : 'negatif');
 
+
+/* ---------- Warna grafik (diambil dari CSS supaya ikut tema terang / gelap) ---------- */
+function warna() {
+  const css = getComputedStyle(document.documentElement);
+  const ambil = (nama) => css.getPropertyValue(nama).trim();
+  return {
+    aksen: ambil('--accent'),
+    aksen2: ambil('--accent-2'),
+    bahaya: ambil('--bad'),
+    teks: ambil('--text'),
+    garis: ambil('--line'),
+    tengah: ambil('--card-solid'),
+  };
+}
+
+/* ---------- Cincin progres (SVG sederhana) ---------- */
+function ring(persen, ukuran, tebal, teksUtama, teksKecil, fontSize = '1rem') {
+  const r = (ukuran - tebal) / 2;
+  const keliling = 2 * Math.PI * r;
+  const isi = keliling * Math.min(Math.max(persen / 100, 0), 1);
+  const c = ukuran / 2;
+  return `<div class="ring" style="width:${ukuran}px;height:${ukuran}px;font-size:${fontSize}">
+    <svg viewBox="0 0 ${ukuran} ${ukuran}">
+      <circle class="ring-bg" cx="${c}" cy="${c}" r="${r}" stroke-width="${tebal}"/>
+      <circle class="ring-fg" cx="${c}" cy="${c}" r="${r}" stroke-width="${tebal}" stroke-linecap="round"
+        stroke-dasharray="${isi} ${keliling}" transform="rotate(-90 ${c} ${c})"/>
+    </svg>
+    <div class="ring-text"><b>${teksUtama}</b><span>${teksKecil}</span></div></div>`;
+}
+
+/* ---------- Tema terang / gelap ---------- */
+const IKON_BULAN = '<path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/>';
+const IKON_MATAHARI = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+
+function setTema(tema) {
+  document.documentElement.dataset.theme = tema;
+  $('ikonTema').innerHTML = tema === 'dark' ? IKON_MATAHARI : IKON_BULAN;
+  try { localStorage.setItem('tema', tema); } catch (e) { /* abaikan */ }
+}
+
+function temaAwal() {
+  let simpan = null;
+  try { simpan = localStorage.getItem('tema'); } catch (e) { /* abaikan */ }
+  if (simpan) return simpan;
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+/* ============================================================
+   RINGKASAN (kartu paling atas)
+   ============================================================ */
+function tampilRingkasan(m, xs) {
+  const y = data[namaY];
+
+  // Cincin besar: R² regresi berganda
+  $('ringUtama').innerHTML = ring(m.r2 * 100, 150, 14, fmt(m.r2 * 100, 1) + '%', 'R²', '1.2rem');
+  $('infoRingUtama').innerHTML = `Adjusted R² ${fmt(m.r2Adj * 100, 1)}%<br>Uji F ${signifikan(m.pF) ? 'signifikan' : 'tidak signifikan'} (p = ${fmtP(m.pF)})`;
+
+  // Batang korelasi, diurutkan dari yang terkuat
+  const kor = xs.map((k) => ({ k, r: korelasi(data[k], y) })).sort((a, b) => Math.abs(b.r) - Math.abs(a.r));
+  $('barKorelasi').innerHTML = kor.map((o) => `
+    <div class="bar-item">
+      <div class="bar-head"><span>${o.k}</span><b>r = ${fmt(o.r)}</b></div>
+      <div class="bar-track"><div class="bar-isi ${o.r < 0 ? 'neg' : ''}" style="width:${Math.abs(o.r) * 100}%"></div></div>
+    </div>`).join('');
+
+  // Ubin R² per variabel
+  $('ubinR2').innerHTML = xs.map((k) => {
+    const s = regresiSederhana(data[k], y);
+    return `<div>${ring(s.r2 * 100, 58, 7, Math.round(s.r2 * 100) + '%', '', '.7rem')}
+      <span><b>${k}</b>${tandaSignifikan(s.p)}</span></div>`;
+  }).join('');
+}
+
+/* ---------- Menu samping: tandai bagian yang sedang dilihat ---------- */
+function aktifkanMenu() {
+  const tautan = document.querySelectorAll('#menu a');
+  const pengamat = new IntersectionObserver((daftar) => {
+    daftar.forEach((item) => {
+      if (!item.isIntersecting) return;
+      tautan.forEach((a) => a.classList.toggle('aktif', a.getAttribute('href') === '#' + item.target.id));
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  tautan.forEach((a) => {
+    const bagian = document.querySelector(a.getAttribute('href'));
+    if (bagian) pengamat.observe(bagian);
+  });
+}
+
 /* ---------- Membaca CSV ---------- */
 function bacaCsv(teks) {
   const baris = teks.replace(/^﻿/, '').trim().split(/\r?\n/);
@@ -120,7 +208,7 @@ function tampilDeskriptif() {
   $('gridHistogram').innerHTML = kolomAngka.map((k) => `<div id="hist-${k}" style="height:230px"></div>`).join('');
   kolomAngka.forEach((k) => {
     Plotly.newPlot(`hist-${k}`, [{
-      x: data[k], type: 'histogram', marker: { color: k === namaY ? '#3d5afe' : '#9aa7ff' },
+      x: data[k], type: 'histogram', marker: { color: k === namaY ? warna().aksen : warna().aksen2 },
     }], tataLetak(k), { displayModeBar: false, responsive: true });
   });
 
@@ -189,8 +277,8 @@ function tampilSederhana() {
   // Scatter plot + garis regresi
   const xMin = Math.min(...x), xMax = Math.max(...x);
   Plotly.newPlot('plotSederhana', [
-    { x, y, mode: 'markers', name: 'Data', marker: { color: '#3d5afe', size: 9, opacity: 0.7 } },
-    { x: [xMin, xMax], y: [m.a + m.b * xMin, m.a + m.b * xMax], mode: 'lines', name: 'Garis regresi', line: { color: '#e5484d', width: 3 } },
+    { x, y, mode: 'markers', name: 'Data', marker: { color: warna().aksen, size: 9, opacity: 0.7 } },
+    { x: [xMin, xMax], y: [m.a + m.b * xMin, m.a + m.b * xMax], mode: 'lines', name: 'Garis regresi', line: { color: warna().bahaya, width: 3 } },
   ], tataLetak(`${namaXAktif} vs ${namaY}`, namaXAktif, namaY), { displayModeBar: false, responsive: true });
 
   // Persamaan dan interpretasi
@@ -285,8 +373,8 @@ function tampilBerganda() {
   // Grafik nilai aktual vs prediksi
   const batas = [Math.min(...y, ...m.yHat), Math.max(...y, ...m.yHat)];
   Plotly.newPlot('plotAktualPrediksi', [
-    { x: y, y: m.yHat, mode: 'markers', name: 'Responden', marker: { color: '#3d5afe', size: 9, opacity: 0.7 } },
-    { x: batas, y: batas, mode: 'lines', name: 'Prediksi = aktual', line: { color: '#e5484d', dash: 'dash' } },
+    { x: y, y: m.yHat, mode: 'markers', name: 'Responden', marker: { color: warna().aksen, size: 9, opacity: 0.7 } },
+    { x: batas, y: batas, mode: 'lines', name: 'Prediksi = aktual', line: { color: warna().bahaya, dash: 'dash' } },
   ], tataLetak(`${namaY}: aktual vs prediksi`, `${namaY} aktual`, `${namaY} prediksi`), { displayModeBar: false, responsive: true });
 
   // Grafik R²: tiap X sendiri vs gabungan
@@ -294,9 +382,10 @@ function tampilBerganda() {
   const r2 = [...xs.map((k) => regresiSederhana(data[k], y).r2), m.r2];
   Plotly.newPlot('plotR2', [{
     x: nama, y: r2, type: 'bar', text: r2.map((v) => fmt(v, 3)), textposition: 'outside',
-    marker: { color: nama.map((n) => (n === 'Gabungan' ? '#e5484d' : '#3d5afe')) },
-  }], { ...tataLetak('R²: satu variabel vs gabungan', '', 'R²'), yaxis: { title: 'R²', range: [0, Math.max(...r2) * 1.25] } }, { displayModeBar: false, responsive: true });
+    marker: { color: nama.map((n) => (n === 'Gabungan' ? warna().bahaya : warna().aksen)) },
+  }], { ...tataLetak('R²: satu variabel vs gabungan', '', 'R²'), yaxis: { title: 'R²', range: [0, Math.max(...r2) * 1.25], gridcolor: warna().garis } }, { displayModeBar: false, responsive: true });
 
+  tampilRingkasan(m, xs);
   tampilInsightRegresi(m, xs, betaStandar);
   tampilSimulasi(m, xs);
   tampilHeatmap();
@@ -362,21 +451,23 @@ function tampilHeatmap() {
   const z = semua.map((a) => semua.map((b) => korelasi(data[a], data[b])));
   Plotly.newPlot('plotHeatmap', [{
     z, x: semua, y: semua, type: 'heatmap', zmin: -1, zmax: 1,
-    colorscale: [[0, '#e5484d'], [0.5, '#ffffff'], [1, '#3d5afe']],
+    colorscale: [[0, warna().bahaya], [0.5, warna().tengah], [1, warna().aksen]],
     text: z.map((baris) => baris.map((v) => fmt(v, 2))), texttemplate: '%{text}',
-  }], { ...tataLetak('Matriks korelasi'), margin: { t: 38, r: 14, b: 42, l: 80 }, yaxis: { autorange: 'reversed' } }, { displayModeBar: false, responsive: true });
+  }], { ...tataLetak('Matriks korelasi'), margin: { t: 38, r: 14, b: 42, l: 80 }, yaxis: { autorange: 'reversed', gridcolor: warna().garis } }, { displayModeBar: false, responsive: true });
 }
 
 /* ---------- Tampilan grafik yang seragam ---------- */
 function tataLetak(judul, labelX = '', labelY = '') {
+  const w = warna();
+  const sumbu = (nama) => ({ title: nama, gridcolor: w.garis, zerolinecolor: w.garis, linecolor: w.garis });
   return {
-    title: { text: judul, font: { size: 13 } },
+    title: { text: judul, font: { size: 13, color: w.teks } },
     margin: { t: 38, r: 14, b: 42, l: 46 },
-    xaxis: { title: labelX },
-    yaxis: { title: labelY },
+    xaxis: sumbu(labelX),
+    yaxis: sumbu(labelY),
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)',
-    font: { family: 'Inter, sans-serif' },
+    font: { family: 'Montserrat, sans-serif', color: w.teks },
     showlegend: false,
   };
 }
@@ -397,4 +488,11 @@ $('fileCsv').addEventListener('change', (e) => {
   pembaca.readAsText(file);
 });
 
+$('tombolTema').addEventListener('click', () => {
+  setTema(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+  tampilkanSemua(); // gambar ulang grafik dengan warna tema baru
+});
+
+setTema(temaAwal());
+aktifkanMenu();
 pakaiData(DATA_BAWAAN);

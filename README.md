@@ -6,6 +6,8 @@ Dashboard statis (HTML, CSS, JavaScript) untuk tugas analisis data survei:
 - **2b** Regresi linear sederhana `y = a + bx` (tiap variabel X dibandingkan dengan PD) + prediksi + langkah hitung manual
 - **2c** Regresi linear berganda (jam tidur, tinggi, berat, persepsi kepintaran diri → PD) + simulasi prediksi
 
+Tampilan: sidebar, kartu ringkasan (cincin R², batang korelasi), dan tema terang/gelap (tombol di pojok kanan atas).
+
 ## Struktur file
 | File | Isi |
 |---|---|
